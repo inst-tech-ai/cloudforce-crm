@@ -1,10 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LayoutDashboard, Users, Building2, Briefcase, FileText, CheckSquare, Bell, Search, Menu, X, ChevronRight, MoreHorizontal, Phone, Mail, Calendar, Plus, Filter, ArrowRight, Star, Settings, LogOut, User, CheckCircle, PieChart as PieChartIcon, BarChart as BarChartIcon, Save, Trash2, Edit2, Package, Tag, Columns, List, Paperclip, Download, AlertCircle, MessageSquare, Clock, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, LineChart, Line } from 'recharts';
 
+// --- API Constants ---
+const API_URL = import.meta.env.VITE_API_URL || 'https://cloudforce-api-987189753237.asia-northeast1.run.app';
+
 // --- Initial Data ---
 const MOCK_USER = { name: "山田 太郎", role: "営業マネージャー", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d" };
-const INITIAL_LEADS = [ { id: 1, name: "佐藤 健太", title: "IT担当", company: "株式会社テックフロンティア", status: "New", source: "Web", email: "sato@tech.com", phone: "03-1234-5678", lastActivity: "2023-10-25", city: "東京都港区" }, { id: 2, name: "鈴木 一郎", title: "代表取締役", company: "グローバルソリューションズ", status: "Working", source: "Referral", email: "suzuki@global.com", phone: "03-8765-4321", lastActivity: "2023-10-24", city: "大阪府大阪市" }, { id: 3, name: "田中 美咲", title: "マーケティング部長", company: "イノベーションデザイン", status: "Nurturing", source: "Seminar", email: "tanaka@inno.com", phone: "06-1234-5678", lastActivity: "2023-10-20", city: "福岡県福岡市" }, { id: 4, name: "高橋 誠", title: "システム部", company: "未来商事", status: "Converted", source: "Web", email: "takahashi@mirai.com", phone: "090-1111-2222", lastActivity: "2023-10-15", city: "神奈川県横浜市" }, ];
+// INITIAL_LEADS はAPIから取得するため空にするか、フェールバックとして残す
+const INITIAL_LEADS_FALLBACK = [ { id: 1, name: "佐藤 健太", title: "IT担当", company: "株式会社テックフロンティア", status: "New", source: "Web", email: "sato@tech.com", phone: "03-1234-5678", lastActivity: "2023-10-25", city: "東京都港区" }, { id: 2, name: "鈴木 一郎", title: "代表取締役", company: "グローバルソリューションズ", status: "Working", source: "Referral", email: "suzuki@global.com", phone: "03-8765-4321", lastActivity: "2023-10-24", city: "大阪府大阪市" }, { id: 3, name: "田中 美咲", title: "マーケティング部長", company: "イノベーションデザイン", status: "Nurturing", source: "Seminar", email: "tanaka@inno.com", phone: "06-1234-5678", lastActivity: "2023-10-20", city: "福岡県福岡市" }, { id: 4, name: "高橋 誠", title: "システム部", company: "未来商事", status: "Converted", source: "Web", email: "takahashi@mirai.com", phone: "090-1111-2222", lastActivity: "2023-10-15", city: "神奈川県横浜市" }, ];
 const INITIAL_ACCOUNTS = [ { id: 1, name: "株式会社テックフロンティア", industry: "IT/通信", type: "Customer", owner: "山田 太郎", website: "www.tech.com", phone: "03-1234-5678", employees: 500, billingCity: "東京都港区" }, { id: 2, name: "大和重工株式会社", industry: "製造", type: "Prospect", owner: "山田 太郎", website: "www.yamato-ind.com", phone: "052-123-4567", employees: 1200, billingCity: "愛知県名古屋市" }, { id: 3, name: "スカイライン物流", industry: "物流", type: "Partner", owner: "鈴木 花子", website: "www.skyline.com", phone: "045-123-4567", employees: 300, billingCity: "神奈川県横浜市" }, ];
 const INITIAL_CONTACTS = [ { id: 1, name: "佐藤 健太", title: "IT戦略部長", email: "sato@tech.com", phone: "03-1234-5678", accountId: 1 }, { id: 2, name: "伊藤 博文", title: "購買課長", email: "ito@yamato-ind.com", phone: "052-123-9999", accountId: 2 }, { id: 3, name: "渡辺 直美", title: "営業本部長", email: "watanabe@skyline.com", phone: "045-123-8888", accountId: 3 }, { id: 4, name: "加藤 浩二", title: "CTO", email: "kato@tech.com", phone: "03-1234-5679", accountId: 1 }, ];
 const INITIAL_OPPORTUNITIES = [ { id: 1, name: "基幹システム刷新プロジェクト", accountId: 2, amount: 15000000, stage: "Proposal", probability: 60, closeDate: "2023-12-20", owner: "山田 太郎", type: "New Business", leadSource: "Web", nextStep: "役員プレゼン", description: "老朽化した現行システムの全面刷新。競合A社とコンペ。", competitor: "Competitor A", daysInStage: 12 }, { id: 2, name: "クラウド移行支援", accountId: 1, amount: 5000000, stage: "Negotiation", probability: 80, closeDate: "2023-11-30", owner: "山田 太郎", type: "Existing Business", leadSource: "Referral", nextStep: "契約書レビュー", description: "オンプレミスからのAWS移行支援。", competitor: "None", daysInStage: 5 }, { id: 3, name: "セキュリティ監査", accountId: 3, amount: 3000000, stage: "Closed Won", probability: 100, closeDate: "2023-10-15", owner: "鈴木 花子", type: "Existing Business", leadSource: "Partner", nextStep: "-", description: "年次セキュリティ監査。", competitor: "None", daysInStage: 0 }, { id: 4, name: "AIチャットボット導入", accountId: 1, amount: 8000000, stage: "Discovery", probability: 20, closeDate: "2024-01-15", owner: "山田 太郎", type: "New Business", leadSource: "Seminar", nextStep: "要件定義ヒアリング", description: "カスタマーサポート効率化のためのAI導入。", competitor: "Competitor B, Competitor C", daysInStage: 45 }, { id: 5, name: "次年度ライセンス更新", accountId: 2, amount: 2000000, stage: "Closed Lost", probability: 0, closeDate: "2023-09-30", owner: "佐藤 次郎", type: "Existing Business", leadSource: "Other", nextStep: "-", description: "予算縮小により失注。", competitor: "-", daysInStage: 0 }, ];
@@ -170,9 +174,9 @@ const Modal = ({ isOpen, onClose, title, children, onSave }) => {
 };
 
 const FormField = ({ label, children }) => (<div className="mb-4"><label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>{children}</div>);
-const Input = ({ type = "text", value, onChange, placeholder }) => (<input type={type} value={value} onChange={onChange} placeholder={placeholder} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]" />);
-const TextArea = ({ value, onChange, placeholder }) => (<textarea value={value} onChange={onChange} placeholder={placeholder} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]" />);
-const Select = ({ value, onChange, options }) => (<select value={value} onChange={onChange} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]">{options.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}</select>);
+const Input = ({ type = "text", value, onChange, placeholder, ...props }) => (<input type={type} value={value} onChange={onChange} placeholder={placeholder} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]" {...props} />);
+const TextArea = ({ value, onChange, placeholder, ...props }) => (<textarea value={value} onChange={onChange} placeholder={placeholder} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]" {...props} />);
+const Select = ({ value, onChange, options, ...props }) => (<select value={value} onChange={onChange} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#0176d3] focus:border-[#0176d3]" {...props}>{options.map(opt => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}</select>);
 
 const StatCard = ({ title, value, subtext, trend, type = "neutral" }) => (
   <div className="bg-white p-5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -484,44 +488,54 @@ const StandardListView = ({ title, icon: Icon, data, columns, onItemClick, onNew
               <button onClick={() => setViewMode('kanban')} className={`p-1 rounded ${viewMode === 'kanban' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`} title="カンバン表示"><Columns size={16} /></button>
             </div>
           )}
-          <div className="hidden md:flex relative"><input type="text" placeholder="このリストを検索..." className="border border-gray-300 rounded pl-8 pr-2 py-1 text-sm focus:ring-1 focus:ring-[#0176d3]" disabled /><Search size={14} className="absolute left-2 top-2 text-gray-400" /></div>
-          <button className="p-1 text-gray-500 hover:bg-gray-100 border border-gray-300 rounded"><Settings size={16} /></button>
-          <button onClick={onNewClick} className="bg-[#0176d3] text-white px-3 py-1 rounded text-sm font-medium hover:bg-[#005fb2] shadow-sm">新規</button>
+          <button onClick={onNewClick} className="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-sm font-medium hover:bg-gray-50 flex items-center">新規</button>
+          <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded border border-gray-300"><RefreshCw size={16} /></button>
+          <button className="p-1.5 text-gray-500 hover:bg-gray-100 rounded border border-gray-300"><Settings size={16} /></button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-gray-50">
-        {viewMode === 'kanban' ? ( <KanbanBoard data={filteredData} accounts={accounts} onItemClick={onKanbanClick || onItemClick} /> ) : (
-          <table className="min-w-full text-left border-collapse bg-white">
-            <thead className="bg-gray-50 sticky top-0 z-1 shadow-sm"> <tr><th className="p-3 border-b border-gray-200 w-10"><input type="checkbox" /></th>{columns.map((col) => (<th key={col.key} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{col.label}</th>))}<th className="p-3 border-b border-gray-200 w-24"></th></tr> </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {filteredData.length > 0 ? filteredData.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
-                  <td className="p-3"><input type="checkbox" /></td>
-                  {columns.map((col, idx) => (<td key={col.key} className="p-3 text-sm whitespace-nowrap">{idx === 0 ? (<button onClick={() => onItemClick && onItemClick(row)} className="text-[#0176d3] hover:underline font-medium text-left">{renderCell(row, col)}</button>) : (col.format ? col.format(row[col.key]) : renderCell(row, col))}</td>))}
-                  <td className="p-3 text-right flex justify-end space-x-1"> <button onClick={(e) => { e.stopPropagation(); onEditClick(row); }} className="text-gray-400 hover:text-[#0176d3] p-1 rounded"><Edit2 size={14} /></button> <button onClick={(e) => { e.stopPropagation(); onDeleteClick(row.id); }} className="text-gray-400 hover:text-red-600 p-1 rounded"><Trash2 size={14} /></button> </td>
+      <div className="flex-1 overflow-auto bg-white">
+        {viewMode === 'kanban' ? (
+          <KanbanBoard data={filteredData} accounts={accounts} onItemClick={onKanbanClick} />
+        ) : (
+          <table className="min-w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-gray-50 sticky top-0 z-0">
+              <tr>
+                <th className="px-4 py-2 w-10 text-center"><input type="checkbox" /></th>
+                {columns.map(col => (<th key={col.key} className="px-4 py-2 font-medium text-gray-500 border-b border-gray-200">{col.label}</th>))}
+                <th className="px-4 py-2 w-10 border-b border-gray-200"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredData.map(row => (
+                <tr key={row.id} className="hover:bg-gray-50 group">
+                  <td className="px-4 py-2 text-center"><input type="checkbox" /></td>
+                  {columns.map((col, idx) => (
+                    <td key={col.key} className={`px-4 py-3 ${idx === 0 ? 'font-medium text-[#0176d3] cursor-pointer hover:underline' : 'text-gray-700'}`} onClick={idx === 0 ? () => onItemClick(row) : undefined}>
+                      {renderCell(row, col)}
+                    </td>
+                  ))}
+                  <td className="px-4 py-2 text-right">
+                    <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => onEditClick(row)} className="p-1 text-gray-400 hover:text-[#0176d3]"><Edit2 size={14} /></button>
+                      <button onClick={() => onDeleteClick(row.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                    </div>
+                  </td>
                 </tr>
-              )) : (<tr><td colSpan={columns.length + 2} className="p-10 text-center text-gray-500">一致するデータがありません。</td></tr>)}
+              ))}
+              {filteredData.length === 0 && (<tr><td colSpan={columns.length + 2} className="px-4 py-8 text-center text-gray-500 italic">データがありません</td></tr>)}
             </tbody>
           </table>
         )}
       </div>
-      {viewMode !== 'kanban' && ( <div className="bg-gray-50 border-t border-gray-200 p-2 text-xs text-gray-500 text-center">{filteredData.length} 件の項目 • 最終更新: 数秒前</div> )}
     </div>
   );
 };
 
-const ReportsView = () => (<div className="p-10 text-center"><h2 className="text-xl font-bold text-gray-700">レポート</h2><p className="text-gray-500 mt-2">データを可視化するダッシュボードです。</p></div>);
-const TaskListView = ({ data }) => (<div className="p-4 bg-gray-50 h-full overflow-y-auto"><div className="bg-white rounded shadow overflow-hidden"><table className="min-w-full text-sm"><thead className="bg-gray-50 border-b"><tr><th className="px-4 py-3 text-left">件名</th><th className="px-4 py-3 text-left">期限</th><th className="px-4 py-3 text-left">状況</th></tr></thead><tbody>{data.map(t => (<tr key={t.id} className="border-b last:border-0 hover:bg-gray-50"><td className="px-4 py-3 text-[#0176d3]">{t.subject}</td><td className="px-4 py-3">{t.dueDate}</td><td className="px-4 py-3">{t.status}</td></tr>))}</tbody></table></div></div>);
-
-// --- Main App Component ---
-export default function App() {
+// --- App Container ---
+const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState('');
-  const [oppViewMode, setOppViewMode] = useState('table');
-
-  // Data State
-  const [leads, setLeads] = useState(INITIAL_LEADS);
+  const [leads, setLeads] = useState([]);
   const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
   const [contacts, setContacts] = useState(INITIAL_CONTACTS);
   const [opportunities, setOpportunities] = useState(INITIAL_OPPORTUNITIES);
@@ -529,109 +543,178 @@ export default function App() {
   const [files, setFiles] = useState(INITIAL_FILES);
   const [activities, setActivities] = useState(INITIAL_ACTIVITIES);
   const [tasks, setTasks] = useState(INITIAL_TASKS);
-
-  // Selection State
-  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
-  const [selectedAccount, setSelectedAccount] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
-
-  // Modal State
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null);
-  const [formData, setFormData] = useState({});
+  const [modalType, setModalType] = useState(null); // 'lead', 'account', 'opportunity', 'task', 'activity'
+  const [editingItem, setEditingItem] = useState(null);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'kanban'
+  const formRef = React.useRef(null);
 
-  // Handlers
-  const handleOppClick = (opp) => { setSelectedOpportunity(opp); setActiveTab('opportunityDetail'); };
-  const handleAccountClick = (acc) => { setSelectedAccount(acc); setActiveTab('accountDetail'); };
-  const handleLeadClick = (lead) => { setSelectedLead(lead); setActiveTab('leadDetail'); };
+  // Fetch data from API
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/customers`);
+        if (response.ok) {
+          const data = await response.json();
+          const formattedLeads = data.map(c => ({
+            id: c.id,
+            name: c.name,
+            title: '-',
+            company: c.company || '-',
+            status: c.status || 'New',
+            source: 'Web',
+            email: c.email,
+            phone: '-',
+            lastActivity: c.created_at ? c.created_at.split('T')[0] : '-',
+            city: '-'
+          }));
+          setLeads(formattedLeads);
+        }
+      } catch (error) {
+        console.error("Failed to fetch customers:", error);
+      }
+    };
+    fetchCustomers();
+  }, []);
 
-  const openModal = (type, record = {}) => {
-    setModalType(type);
-    setFormData(record);
-    setIsModalOpen(true);
-  };
-
-  const handleSave = () => {
-    const isEdit = !!formData.id;
-    const timestamp = new Date().toISOString().split('T')[0];
-    const updateOrAdd = (list, newItem) => isEdit ? list.map(item => item.id === newItem.id ? { ...item, ...newItem } : item) : [...list, { ...newItem, id: Math.floor(Math.random() * 100000) }];
-    const processedFormData = { ...formData, accountId: formData.accountId ? Number(formData.accountId) : undefined };
-
+  const handleSave = async (data) => {
     if (modalType === 'lead') {
-      setLeads(prev => updateOrAdd(prev, { status: 'New', lastActivity: timestamp, ...processedFormData }));
-      if (isEdit && selectedLead?.id === formData.id) setSelectedLead({ ...selectedLead, ...processedFormData });
+      try {
+        // API POST
+        const response = await fetch(`${API_URL}/api/customers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+            company: data.company,
+            status: data.status
+          }),
+        });
+        
+        if (response.ok) {
+          const newCustomer = await response.json();
+          const newLead = {
+            id: newCustomer.id,
+            name: newCustomer.name,
+            title: data.title || '-',
+            company: newCustomer.company,
+            status: newCustomer.status,
+            source: data.source || 'Web',
+            email: newCustomer.email,
+            phone: data.phone || '-',
+            lastActivity: new Date().toISOString().split('T')[0],
+            city: data.city || '-'
+          };
+          setLeads([newLead, ...leads]);
+        }
+      } catch (error) {
+        console.error("Failed to save lead:", error);
+        // Fallback for UI
+        const newItem = { ...data, id: Date.now(), lastActivity: new Date().toISOString().split('T')[0] };
+        setLeads([newItem, ...leads]);
+      }
     } else if (modalType === 'account') {
-      setAccounts(prev => updateOrAdd(prev, { type: 'Customer', ...processedFormData }));
-      if (isEdit && selectedAccount?.id === formData.id) setSelectedAccount({ ...selectedAccount, ...processedFormData });
+      if (editingItem) { setAccounts(accounts.map(item => item.id === editingItem.id ? { ...item, ...data } : item)); if (selectedAccount && selectedAccount.id === editingItem.id) setSelectedAccount({ ...selectedAccount, ...data }); }
+      else { const newItem = { ...data, id: accounts.length + 1 }; setAccounts([newItem, ...accounts]); }
     } else if (modalType === 'opportunity') {
-      setOpportunities(prev => updateOrAdd(prev, { stage: 'Prospecting', probability: 10, ...processedFormData }));
-      if (isEdit && selectedOpportunity?.id === formData.id) setSelectedOpportunity({ ...selectedOpportunity, ...processedFormData });
+      if (editingItem) { setOpportunities(opportunities.map(item => item.id === editingItem.id ? { ...item, ...data } : item)); if (selectedOpportunity && selectedOpportunity.id === editingItem.id) setSelectedOpportunity({ ...selectedOpportunity, ...data }); }
+      else { const newItem = { ...data, id: opportunities.length + 1, daysInStage: 0 }; setOpportunities([newItem, ...opportunities]); }
     } else if (modalType === 'task') {
-      setTasks(prev => [...prev, { id: Math.floor(Math.random() * 100000), status: 'Not Started', ...processedFormData }]);
+      const newItem = { ...data, id: tasks.length + 1, status: 'Not Started', relatedTo: selectedOpportunity ? selectedOpportunity.name : '' }; setTasks([newItem, ...tasks]);
     } else if (modalType === 'activity') {
-      setActivities(prev => [...prev, { id: Math.floor(Math.random() * 100000), ...processedFormData }]);
+      const newItem = { ...data, id: activities.length + 1, relatedTo: selectedOpportunity ? selectedOpportunity.name : '' }; setActivities([newItem, ...activities]);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (type, id) => {
-    if (!window.confirm("本当にこのレコードを削除しますか？")) return;
-    if (type === 'lead') { setLeads(prev => prev.filter(item => item.id !== id)); if (selectedLead?.id === id) setActiveTab('leads'); }
-    else if (type === 'account') { setAccounts(prev => prev.filter(item => item.id !== id)); if (selectedAccount?.id === id) setActiveTab('accounts'); }
-    else if (type === 'opportunity') { setOpportunities(prev => prev.filter(item => item.id !== id)); if (selectedOpportunity?.id === id) setActiveTab('opportunities'); }
+  const handleDelete = (id, type) => {
+    if (confirm('本当に削除しますか？')) {
+      if (type === 'lead') { setLeads(leads.filter(item => item.id !== id)); if (selectedLead && selectedLead.id === id) setActiveTab('leads'); }
+      else if (type === 'account') { setAccounts(accounts.filter(item => item.id !== id)); if (selectedAccount && selectedAccount.id === id) setActiveTab('accounts'); }
+      else if (type === 'opportunity') { setOpportunities(opportunities.filter(item => item.id !== id)); if (selectedOpportunity && selectedOpportunity.id === id) setActiveTab('opportunities'); }
+    }
   };
 
-  const handleStageChange = (newStage) => {
-    if (!selectedOpportunity) return;
-    const updatedOpp = { ...selectedOpportunity, stage: newStage };
-    setOpportunities(prev => prev.map(o => o.id === updatedOpp.id ? updatedOpp : o));
-    setSelectedOpportunity(updatedOpp);
-  };
+  const openNewModal = (type) => { setModalType(type); setEditingItem(null); setIsModalOpen(true); };
+  const openEditModal = (item, type) => { setModalType(type); setEditingItem(item); setIsModalOpen(true); };
 
-  const handleStatusChange = (newStatus) => {
-    if (!selectedLead) return;
-    const updatedLead = { ...selectedLead, status: newStatus };
-    setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
-    setSelectedLead(updatedLead);
-  };
-
-  const handleInputChange = (field, value) => { setFormData(prev => ({ ...prev, [field]: value })); };
-
-  // Render Content
   const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard': return <Dashboard />;
-      case 'leads': return <StandardListView title="リード" icon={Users} data={leads} filterText={globalSearch} onItemClick={handleLeadClick} onNewClick={() => openModal('lead')} onEditClick={(row) => openModal('lead', row)} onDeleteClick={(id) => handleDelete('lead', id)} columns={[{ key: 'name', label: '氏名' }, { key: 'company', label: '会社名' }, { key: 'status', label: '状況' }, { key: 'email', label: 'メール' }]} />;
-      case 'leadDetail': return <LeadDetail lead={selectedLead} onBack={() => setActiveTab('leads')} onEdit={() => openModal('lead', selectedLead)} onDelete={() => handleDelete('lead', selectedLead.id)} onStatusChange={handleStatusChange} />;
-      case 'accounts': return <StandardListView title="取引先" icon={Building2} data={accounts} filterText={globalSearch} onItemClick={handleAccountClick} onNewClick={() => openModal('account')} onEditClick={(row) => openModal('account', row)} onDeleteClick={(id) => handleDelete('account', id)} columns={[{ key: 'name', label: '取引先名' }, { key: 'industry', label: '業種' }, { key: 'phone', label: '電話' }, { key: 'type', label: '種別' }]} />;
-      case 'accountDetail': return <AccountDetail account={selectedAccount} onBack={() => setActiveTab('accounts')} onEdit={() => openModal('account', selectedAccount)} onDelete={() => handleDelete('account', selectedAccount.id)} onOppClick={handleOppClick} opportunities={opportunities} contacts={contacts} />;
-      case 'opportunities': return ( <StandardListView title="商談" icon={Briefcase} data={opportunities} accounts={accounts} filterText={globalSearch} onItemClick={handleOppClick} onKanbanClick={handleOppClick} onNewClick={() => openModal('opportunity')} onEditClick={(row) => openModal('opportunity', row)} onDeleteClick={(id) => handleDelete('opportunity', id)} viewMode={oppViewMode} setViewMode={setOppViewMode} columns={[{ key: 'name', label: '商談名' }, { key: 'accountId', label: '取引先名' }, { key: 'stage', label: 'フェーズ' }, { key: 'amount', label: '金額', format: formatCurrency }]} /> );
-      case 'opportunityDetail': return ( <OpportunityDetail opportunity={selectedOpportunity} accounts={accounts} lineItems={lineItems} files={files} activities={activities} tasks={tasks} onBack={() => setActiveTab('opportunities')} onEdit={() => openModal('opportunity', selectedOpportunity)} onDelete={() => handleDelete('opportunity', selectedOpportunity.id)} onStageChange={handleStageChange} onNewTask={() => openModal('task', { relatedTo: selectedOpportunity.name })} onNewActivity={() => openModal('activity', { relatedTo: selectedOpportunity.name })} /> );
-      case 'reports': return <ReportsView />;
-      case 'tasks': return <TaskListView data={tasks} />;
-      default: return <div className="p-10 text-center">開発中</div>;
-    }
-  };
-
-  const renderModalContent = () => {
-    switch (modalType) {
-      case 'lead': return (<><FormField label="氏名 (必須)"><Input value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} /></FormField><FormField label="会社名 (必須)"><Input value={formData.company || ''} onChange={(e) => handleInputChange('company', e.target.value)} /></FormField><FormField label="メールアドレス"><Input type="email" value={formData.email || ''} onChange={(e) => handleInputChange('email', e.target.value)} /></FormField><FormField label="電話番号"><Input type="tel" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} /></FormField><FormField label="ソース"><Select value={formData.source || 'Web'} onChange={(e) => handleInputChange('source', e.target.value)} options={[{value:'Web', label:'Web'}, {value:'Referral', label:'紹介'}, {value:'Seminar', label:'セミナー'}]} /></FormField></>);
-      case 'account': return (<><FormField label="取引先名 (必須)"><Input value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} /></FormField><FormField label="業種"><Select value={formData.industry || 'IT/通信'} onChange={(e) => handleInputChange('industry', e.target.value)} options={[{value:'IT/通信', label:'IT/通信'}, {value:'製造', label:'製造'}, {value:'物流', label:'物流'}, {value:'サービス', label:'サービス'}]} /></FormField><FormField label="電話番号"><Input type="tel" value={formData.phone || ''} onChange={(e) => handleInputChange('phone', e.target.value)} /></FormField><FormField label="Webサイト"><Input value={formData.website || ''} onChange={(e) => handleInputChange('website', e.target.value)} /></FormField></>);
-      case 'opportunity': return (<><FormField label="商談名 (必須)"><Input value={formData.name || ''} onChange={(e) => handleInputChange('name', e.target.value)} /></FormField><FormField label="取引先 (必須)"><Select value={formData.accountId || ''} onChange={(e) => handleInputChange('accountId', e.target.value)} options={[{value: '', label: '-- 選択してください --'}, ...accounts.map(acc => ({value: acc.id, label: acc.name}))]} /></FormField><div className="grid grid-cols-2 gap-4"><FormField label="金額"><Input type="number" value={formData.amount || ''} onChange={(e) => handleInputChange('amount', e.target.value)} /></FormField><FormField label="完了予定日"><Input type="date" value={formData.closeDate || ''} onChange={(e) => handleInputChange('closeDate', e.target.value)} /></FormField></div><div className="grid grid-cols-2 gap-4"><FormField label="種別"><Select value={formData.type || 'New Business'} onChange={(e) => handleInputChange('type', e.target.value)} options={[{value:'New Business', label:'新規'}, {value:'Existing Business', label:'既存'}, {value:'Partner', label:'パートナー'}]} /></FormField><FormField label="リードソース"><Select value={formData.leadSource || 'Web'} onChange={(e) => handleInputChange('leadSource', e.target.value)} options={[{value:'Web', label:'Web'}, {value:'Referral', label:'紹介'}, {value:'Seminar', label:'セミナー'}, {value:'Partner', label:'パートナー'}, {value:'Other', label:'その他'}]} /></FormField></div><FormField label="次のステップ"><Input value={formData.nextStep || ''} onChange={(e) => handleInputChange('nextStep', e.target.value)} /></FormField><FormField label="説明"><TextArea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} /></FormField></>);
-      case 'task': return ( <> <FormField label="件名 (必須)"><Input value={formData.subject || ''} onChange={(e) => handleInputChange('subject', e.target.value)} /></FormField> <div className="grid grid-cols-2 gap-4"> <FormField label="期限"><Input type="date" value={formData.dueDate || ''} onChange={(e) => handleInputChange('dueDate', e.target.value)} /></FormField> <FormField label="優先度"><Select value={formData.priority || 'Normal'} onChange={(e) => handleInputChange('priority', e.target.value)} options={[{value:'High', label:'高'}, {value:'Normal', label:'中'}, {value:'Low', label:'低'}]} /></FormField> </div> <FormField label="関連先"><Input value={formData.relatedTo || ''} onChange={(e) => handleInputChange('relatedTo', e.target.value)} /></FormField> </> );
-      case 'activity': return ( <> <FormField label="件名"><Input value={formData.subject || ''} onChange={(e) => handleInputChange('subject', e.target.value)} /></FormField> <div className="grid grid-cols-2 gap-4"> <FormField label="タイプ"><Select value={formData.type || 'call'} onChange={(e) => handleInputChange('type', e.target.value)} options={[{value:'call', label:'電話'}, {value:'email', label:'メール'}, {value:'meeting', label:'会議'}]} /></FormField> <FormField label="日付"><Input type="date" value={formData.date || ''} onChange={(e) => handleInputChange('date', e.target.value)} /></FormField> </div> <FormField label="関連先"><Input value={formData.relatedTo || ''} onChange={(e) => handleInputChange('relatedTo', e.target.value)} /></FormField> <FormField label="説明/メモ"><TextArea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} /></FormField> </> );
-      default: return null;
-    }
+    if (activeTab === 'dashboard') return <Dashboard />;
+    if (activeTab === 'leads') return <StandardListView title="リード" icon={Users} data={leads} columns={[ { key: 'name', label: '氏名' }, { key: 'title', label: '役職' }, { key: 'company', label: '会社名' }, { key: 'status', label: '状況' }, { key: 'email', label: 'メール' }, { key: 'lastActivity', label: '最終活動日' } ]} onItemClick={(lead) => { setSelectedLead(lead); setActiveTab('leadDetail'); }} onNewClick={() => openNewModal('lead')} onEditClick={(lead) => openEditModal(lead, 'lead')} onDeleteClick={(id) => handleDelete(id, 'lead')} filterText={globalSearch} accounts={accounts} />;
+    if (activeTab === 'leadDetail') return <LeadDetail lead={selectedLead} onBack={() => setActiveTab('leads')} onEdit={() => openEditModal(selectedLead, 'lead')} onDelete={() => handleDelete(selectedLead.id, 'lead')} onStatusChange={(newStatus) => { const updated = { ...selectedLead, status: newStatus }; setLeads(leads.map(l => l.id === updated.id ? updated : l)); setSelectedLead(updated); }} />;
+    if (activeTab === 'accounts') return <StandardListView title="取引先" icon={Building2} data={accounts} columns={[ { key: 'name', label: '取引先名' }, { key: 'industry', label: '業種' }, { key: 'phone', label: '電話' }, { key: 'website', label: 'Webサイト' }, { key: 'owner', label: '所有者' } ]} onItemClick={(acc) => { setSelectedAccount(acc); setActiveTab('accountDetail'); }} onNewClick={() => openNewModal('account')} onEditClick={(acc) => openEditModal(acc, 'account')} onDeleteClick={(id) => handleDelete(id, 'account')} filterText={globalSearch} accounts={accounts} />;
+    if (activeTab === 'accountDetail') return <AccountDetail account={selectedAccount} opportunities={opportunities} contacts={contacts} onBack={() => setActiveTab('accounts')} onEdit={() => openEditModal(selectedAccount, 'account')} onDelete={() => handleDelete(selectedAccount.id, 'account')} onOppClick={(opp) => { setSelectedOpportunity(opp); setActiveTab('opportunityDetail'); }} />;
+    if (activeTab === 'opportunities') return <StandardListView title="商談" icon={Briefcase} data={opportunities} columns={[ { key: 'name', label: '商談名' }, { key: 'accountId', label: '取引先名' }, { key: 'amount', label: '金額' }, { key: 'stage', label: 'フェーズ' }, { key: 'closeDate', label: '完了予定日' }, { key: 'owner', label: '所有者' } ]} onItemClick={(opp) => { setSelectedOpportunity(opp); setActiveTab('opportunityDetail'); }} onNewClick={() => openNewModal('opportunity')} onEditClick={(opp) => openEditModal(opp, 'opportunity')} onDeleteClick={(id) => handleDelete(id, 'opportunity')} filterText={globalSearch} accounts={accounts} viewMode={viewMode} setViewMode={setViewMode} onKanbanClick={(opp) => { setSelectedOpportunity(opp); setActiveTab('opportunityDetail'); }} />;
+    if (activeTab === 'opportunityDetail') return <OpportunityDetail opportunity={selectedOpportunity} accounts={accounts} lineItems={lineItems} files={files} activities={activities} tasks={tasks} onBack={() => setActiveTab('opportunities')} onEdit={() => openEditModal(selectedOpportunity, 'opportunity')} onDelete={() => handleDelete(selectedOpportunity.id, 'opportunity')} onStageChange={(newStage) => { const updated = { ...selectedOpportunity, stage: newStage }; setOpportunities(opportunities.map(o => o.id === updated.id ? updated : o)); setSelectedOpportunity(updated); }} onNewTask={() => openNewModal('task')} onNewActivity={() => openNewModal('activity')} />;
+    return <div className="p-8 text-center text-gray-500">準備中です...</div>;
   };
 
   return (
-    <div className="flex h-screen w-full bg-gray-100 font-sans text-gray-900">
-      <Sidebar activeTab={activeTab === 'opportunityDetail' ? 'opportunities' : activeTab === 'accountDetail' ? 'accounts' : activeTab === 'leadDetail' ? 'leads' : activeTab} setActiveTab={setActiveTab} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header title="CloudForce CRM" onMenuClick={() => setIsMobileOpen(true)} globalSearch={globalSearch} setGlobalSearch={setGlobalSearch} />
-        <main className="flex-1 overflow-y-auto relative focus:outline-none">{renderContent()}</main>
+    <div className="flex h-screen bg-[#f3f2f2] font-sans text-gray-900 overflow-hidden">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isMobileOpen={isMobileOpen} setIsMobileOpen={setIsMobileOpen} />
+      <div className="flex-1 flex flex-col h-screen overflow-hidden w-full">
+        <Header title={activeTab === 'dashboard' ? 'ダッシュボード' : activeTab === 'leads' ? 'リード' : activeTab === 'accounts' ? '取引先' : 'CloudForce'} onMenuClick={() => setIsMobileOpen(true)} globalSearch={globalSearch} setGlobalSearch={setGlobalSearch} />
+        <main className="flex-1 overflow-hidden relative">{renderContent()}</main>
       </div>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={formData.id ? `${modalType === 'lead' ? 'リード' : modalType === 'account' ? '取引先' : '商談'}を編集` : `新規${modalType === 'lead' ? 'リード' : modalType === 'account' ? '取引先' : modalType === 'task' ? 'ToDo' : '活動'}作成`} onSave={handleSave}>{renderModalContent()}</Modal>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingItem ? '編集' : '新規作成'} onSave={() => {
+          if (formRef.current) {
+            if (!formRef.current.reportValidity()) return;
+            const formData = new FormData(formRef.current);
+            const data = Object.fromEntries(formData.entries());
+            handleSave(data);
+          }
+        }}>
+        <form ref={formRef}>
+          {modalType === 'lead' && (
+            <>
+              <FormField label="氏名"><Input name="name" required placeholder="例: 山田 太郎" defaultValue={editingItem?.name} /></FormField>
+              <FormField label="会社名"><Input name="company" placeholder="例: 株式会社ABC" defaultValue={editingItem?.company} /></FormField>
+              <FormField label="役職"><Input name="title" placeholder="例: 部長" defaultValue={editingItem?.title} /></FormField>
+              <FormField label="メール"><Input type="email" name="email" required placeholder="email@example.com" defaultValue={editingItem?.email} /></FormField>
+              <FormField label="電話番号"><Input type="tel" name="phone" placeholder="03-1234-5678" defaultValue={editingItem?.phone} /></FormField>
+              <FormField label="ステータス"><Select name="status" options={LEAD_STATUSES.map(s => ({ value: s, label: LEAD_STATUS_LABELS[s] }))} defaultValue={editingItem?.status} /></FormField>
+            </>
+          )}
+          {modalType === 'account' && (
+            <>
+              <FormField label="取引先名"><Input name="name" defaultValue={editingItem?.name} /></FormField>
+              <FormField label="業種"><Input name="industry" defaultValue={editingItem?.industry} /></FormField>
+              <FormField label="電話番号"><Input name="phone" defaultValue={editingItem?.phone} /></FormField>
+              <FormField label="Webサイト"><Input name="website" defaultValue={editingItem?.website} /></FormField>
+            </>
+          )}
+          {modalType === 'opportunity' && (
+            <>
+              <FormField label="商談名"><Input name="name" defaultValue={editingItem?.name} /></FormField>
+              <FormField label="金額"><Input type="number" name="amount" defaultValue={editingItem?.amount} /></FormField>
+              <FormField label="完了予定日"><Input type="date" name="closeDate" defaultValue={editingItem?.closeDate} /></FormField>
+              <FormField label="フェーズ"><Select name="stage" options={STAGES.map(s => ({ value: s, label: STAGE_LABELS[s] }))} defaultValue={editingItem?.stage} /></FormField>
+            </>
+          )}
+          {modalType === 'task' && (
+             <>
+               <FormField label="件名"><Input name="subject" /></FormField>
+               <FormField label="期限"><Input type="date" name="dueDate" /></FormField>
+               <FormField label="優先度"><Select name="priority" options={[{value:'High', label:'高'}, {value:'Normal', label:'中'}, {value:'Low', label:'低'}]} /></FormField>
+             </>
+          )}
+          {modalType === 'activity' && (
+             <>
+               <FormField label="件名"><Input name="subject" /></FormField>
+               <FormField label="日付"><Input type="datetime-local" name="date" /></FormField>
+               <FormField label="タイプ"><Select name="type" options={[{value:'call', label:'電話'}, {value:'email', label:'メール'}, {value:'meeting', label:'会議'}]} /></FormField>
+               <FormField label="説明"><TextArea name="description" /></FormField>
+             </>
+          )}
+        </form>
+      </Modal>
     </div>
   );
-}
+};
+
+export default App;
