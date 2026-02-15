@@ -1,6 +1,6 @@
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
-import { formatCurrency } from '../../utils/constants';
+import { formatCurrency } from '../utils/constants';
 
 const StandardListView = ({ title, icon: Icon, data, columns, onItemClick, onNewClick, onEditClick, onDeleteClick, filterText }) => {
   const filteredData = data.filter(row => !filterText || Object.values(row).some(val => String(val).toLowerCase().includes(filterText.toLowerCase())));
