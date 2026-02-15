@@ -44,11 +44,19 @@ const AppContent = () => {
     const fetchData = async () => {
       const headers = { 'Authorization': `Bearer ${token}` };
       try {
-        const [resLeads, resAccs, resOpps] = await Promise.all([
+        const responses = await Promise.all([
           fetch(`${API_URL}/api/customers`, { headers }),
           fetch(`${API_URL}/api/accounts`, { headers }),
           fetch(`${API_URL}/api/opportunities`, { headers })
         ]);
+
+        if (responses.some(r => r.status === 401)) {
+           handleLogout();
+           return;
+        }
+
+        const [resLeads, resAccs, resOpps] = responses;
+
         if (resLeads.ok) setLeads(await resLeads.json());
         if (resAccs.ok) setAccounts(await resAccs.json());
         if (resOpps.ok) setOpportunities(await resOpps.json());
