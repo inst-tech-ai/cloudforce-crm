@@ -1,0 +1,17 @@
+{
+  "accounts": [
+    { "id": 1, "name": "株式会社テックフロンティア", "industry": "IT/通信", "type": "Customer", "owner": "山田 太郎", "website": "www.tech.com", "phone": "03-1234-5678", "employees": 500, "billingCity": "東京都港区" },
+    { "id": 2, "name": "大和重工株式会社", "industry": "製造", "type": "Prospect", "owner": "山田 太郎", "website": "www.yamato-ind.com", "phone": "052-123-4567", "employees": 1200, "billingCity": "愛知県名古屋市" },
+    { "id": 3, "name": "スカイライン物流", "industry": "物流", "type": "Partner", "owner": "鈴木 花子", "website": "www.skyline.com", "phone": "045-123-4567", "employees": 300, "billingCity": "神奈川県横浜市" }
+  ],
+  "opportunities": [
+    { "id": 1, "name": "基幹システム刷新プロジェクト", "accountId": 2, "amount": 15000000, "stage": "Proposal", "probability": 60, "closeDate": "2023-12-20", "owner": "山田 太郎", "type": "New Business", "leadSource": "Web", "nextStep": "役員プレゼン", "description": "老朽化した現行システムの全面刷新。競合A社とコンペ。", "competitor": "Competitor A", "daysInStage": 12 },
+    { "id": 2, "name": "クラウド移行支援", "accountId": 1, "amount": 5000000, "stage": "Negotiation", "probability": 80, "closeDate": "2023-11-30", "owner": "山田 太郎", "type": "Existing Business", "leadSource": "Referral", "nextStep": "契約書レビュー", "description": "オンプレミスからのAWS移行支援。", "competitor": "None", "daysInStage": 5 },
+    { "id": 3, "name": "セキュリティ監査", "accountId": 3, "amount": 3000000, "stage": "Closed Won", "probability": 100, "closeDate": "2023-10-15", "owner": "鈴木 花子", "type": "Existing Business", "leadSource": "Partner", "nextStep": "-", "description": "年次セキュリティ監査。", "competitor": "None", "daysInStage": 0 }
+  ],
+  "tasks": [
+    { "id": 1, "subject": "見積書の作成と承認申請", "priority": "High", "status": "Not Started", "dueDate": "2023-10-30", "relatedTo": "基幹システム刷新プロジェクト" },
+    { "id": 2, "subject": "セキュリティチェックシートの回答", "priority": "Normal", "status": "In Progress", "dueDate": "2023-11-02", "relatedTo": "株式会社テックフロンティア" },
+    { "id": 3, "subject": "契約更新の案内メール送付", "priority": "Low", "status": "Not Started", "dueDate": "2023-11-10", "relatedTo": "スカイライン物流" }
+  ]
+}

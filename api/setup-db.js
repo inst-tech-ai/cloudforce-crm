@@ -8,43 +8,34 @@ const pool = new Pool({
   host: process.env.INSTANCE_UNIX_SOCKET ? process.env.INSTANCE_UNIX_SOCKET : process.env.DB_HOST,
 });
 
-async function setupDatabase() {
+// akiさんのGoogleアカウントの一意なID (inst.tech.ai@gmail.com)
+// 昨日のログから推測、あるいはAPI側で自動紐付けするための準備
+const AKI_EMAIL = "inst.tech.ai@gmail.com";
+
+async function migrateToMultiUser() {
   const client = await pool.connect();
   try {
-    console.log('📦 Creating customers table...');
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS customers (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        company VARCHAR(255),
-        status VARCHAR(50) DEFAULT 'Lead',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    console.log('✅ Table created successfully!');
+    console.log('🚀 Migrating to Multi-User environment...');
+
+    // 1. 各テーブルに owner_id (Google sub ID) カラムを追加
+    await client.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS owner_id VARCHAR(255);`);
+    await client.query(`ALTER TABLE customers ADD COLUMN IF NOT EXISTS owner_id VARCHAR(255);`);
+    await client.query(`ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS owner_id VARCHAR(255);`);
+    console.log('✅ owner_id columns added.');
+
+    // 2. 既存のデータを "inst.tech.ai@gmail.com" 専用としてマークするための準備
+    // ※ 実際のGoogle ID(sub)はログイン時に取得するため、一旦メールアドレス等で紐付け、
+    // API側で「owner_idがNULLなら akiさんのもの」として扱うか、
+    // あるいは最初のログイン時に一括更新するロジックを入れます。
     
-    // サンプルデータを入れる
-    console.log('🌱 Seeding data...');
-    const result = await client.query('SELECT COUNT(*) FROM customers');
-    if (result.rows[0].count === '0') {
-      await client.query(`
-        INSERT INTO customers (name, email, company, status) VALUES
-        ('田中 太郎', 'tanaka@example.com', 'Example Inc.', 'Active'),
-        ('鈴木 花子', 'suzuki@test.co.jp', 'Test Corp.', 'Lead'),
-        ('佐藤 一郎', 'sato@demo.net', 'Demo Ltd.', 'Closed')
-      `);
-      console.log('✅ Sample data inserted!');
-    } else {
-      console.log('ℹ️ Table already has data, skipping seed.');
-    }
+    console.log('✅ Migration prepared. Existing data will be assigned to aki on first login.');
 
   } catch (err) {
-    console.error('❌ Error setting up database:', err);
+    console.error('❌ Migration failed:', err);
   } finally {
     client.release();
     pool.end();
   }
 }
 
-setupDatabase();
+migrateToMultiUser();
